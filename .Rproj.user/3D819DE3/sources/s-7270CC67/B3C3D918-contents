@@ -1,0 +1,23 @@
+---
+title: "Data 100 - Final Project"
+output: html_notebook
+runtime: shiny
+---
+
+```{r echo=FALSE }
+data_2011 <- read.csv ( "2011.csv", header = TRUE, na.strings = c ( "", "NA" ) )
+data_2012 <- read.csv ( "2012.csv", header = TRUE, na.strings = c ( "", "NA" ) )
+data_2013 <- read.csv ( "2013.csv", header = TRUE, na.strings = c ( "", "NA" ) )
+data_2014 <- read.csv ( "2014.csv", header = TRUE, na.strings = c ( "", "NA" ) )
+data_2015 <- read.csv ( "2015.csv", header = TRUE, na.strings = c ( "", "NA" ) )
+data_2016 <- read.csv ( "2016.csv", header = TRUE, na.strings = c ( "", "NA" ) )
+data_2017 <- read.csv ( "2017.csv", header = TRUE, na.strings = c ( "", "NA" ) )
+```
+
+
+```{r echo=FALSE}
+
+```
+
+
+

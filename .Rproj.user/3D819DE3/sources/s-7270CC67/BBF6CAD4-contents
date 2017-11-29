@@ -1,0 +1,58 @@
+---
+title: "Clustering High School Social Media Users"
+output: html_notebook
+runtime: shiny
+---
+
+
+```{r echo=FALSE }
+#Read the data and compute clusters.
+teens <- read.csv("snsdata.csv")
+
+#scale the interests
+interests <- teens[5:40]
+interests_z <- as.data.frame(lapply(interests, scale))
+
+#compute 5 clusters
+set.seed(2345)
+teen_clusters <- kmeans(interests_z, 5)
+
+#add cluster as a column
+teens$cluster <- teen_clusters$cluster
+
+clusterNums <- c ( "Princess", "Brains", "Athletes", "Criminals", "Basket Cases" )
+
+```
+
+
+```{r echo=FALSE}
+radioButtons("interestsRB", "interests", choices = c ( "football", "shopping", "drugs", "band", "god"), inline = TRUE)
+
+renderTable({
+  centers <- teen_clusters$centers [ c ( 1: 5 ), input$interestsRB ]
+  intLevel <- ifelse ( centers >= 0.0, "above average", "below average" )
+  
+  resultTable <- data.frame(clusterNums, teen_clusters$size, centers, intLevel )
+  colnames(resultTable) <- c("cluster", "size", input$interestsRB, "interest level" )
+  
+  resultTable <- resultTable [ order ( -centers ), ]
+  resultTable
+})
+
+sliderInput ( "numClusts", "Cluster#", 1, 5, 1, step = 1 )
+renderText ( {
+  paste ( "Cluster ", clusterNums[ input$numClusts ], " consists of ", teen_clusters$size[ input$numClusts ], " studnets\n" )
+})
+
+renderTable({
+  resultTable <- data.frame( colnames ( interests ), teen_clusters$centers [ input$numClusts, ] )
+  colnames ( resultTable ) <- c ( "interests", "centers" )
+  
+  resultTable <- resultTable [ order ( -resultTable [ , 2 ] ), ]
+  resultTable <- head ( resultTable, 6 )
+  resultTable
+})
+```
+
+
+
