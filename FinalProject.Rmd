@@ -4,6 +4,11 @@ output: html_notebook
 runtime: shiny
 ---
 
+```{r echo=FALSE}
+require(ggplot2)
+```
+
+
 ```{r echo=FALSE }
 data_2011 <- read.csv ( "2011.csv", header = TRUE, na.strings = c ( "", "NA" ) )
 data_2012 <- read.csv ( "2012.csv", header = TRUE, na.strings = c ( "", "NA" ) )
@@ -76,8 +81,9 @@ language_use2015 <- c ( NROW ( data_2015 [ !is.na ( data_2015$Current.Lang...Tec
                         NROW ( data_2015 [ !is.na ( data_2015$Current.Lang...Tech..Objective.C ), ] ), # OBjective-C
                         NROW ( data_2015 [ !is.na ( data_2015$Current.Lang...Tech..Node.js ), ] ) ) # Node-JS
   
-language_use2016 <- data.frame ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )  
-colnames ( language_use2016 ) <- c ( "Java", "JavaScript", "PHP", "Python", "Ruby", "SQL", "C#", "C++", "C", "Objective-C", "Node.js")
+langs <- c ( "Java", "JavaScript", "PHP", "Python", "Ruby", "SQL", "C#", "C++", "C", "Objective-C", "Node.js")
+language_use2016 <- data.frame ( langs, rep.int ( 0, 11 ), rep ( 2016, 11 ) )  
+rownames ( language_use2016 ) <- c ( "Java", "JavaScript", "PHP", "Python", "Ruby", "SQL", "C#", "C++", "C", "Objective-C", "Node.js")
 
 for ( i in data_2016$tech_do ) {
   if ( !is.na ( i ) ) {
@@ -85,16 +91,18 @@ for ( i in data_2016$tech_do ) {
     vals <- unlist ( vals )
     for ( j in vals ) {
       if ( !is.na ( j ) ) {
-        if ( toString ( j ) %in% colnames ( language_use2016 ) ) {
-          language_use2016 [ 1, j ] <- language_use2016 [ 1, j ] + 1 
+        if ( toString ( j ) %in% rownames ( language_use2016 ) ) {
+          language_use2016 [ j, 2 ] <- language_use2016 [ j, 2 ] + 1 
         }
       }
     }
   } 
 }
 
-language_use2017 <- data.frame ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )  
-colnames ( language_use2017 ) <- c ( "Java", "JavaScript", "PHP", "Python", "Ruby", "SQL", "C#", "C++", "C", "Objective-C", "Node.js")
+language_use2016$rep.int.0..11. <- language_use2016 [ , 2 ] / NROW ( data_2016 )
+
+language_use2017 <- data.frame ( langs, rep.int ( 0, 11 ), rep ( 2017, 11 ) )
+rownames ( language_use2017 ) <- c ( "Java", "JavaScript", "PHP", "Python", "Ruby", "SQL", "C#", "C++", "C", "Objective-C", "Node.js")
 
 for ( i in data_2017$HaveWorkedLanguage ) {
   if ( !is.na ( i ) ) {
@@ -102,17 +110,50 @@ for ( i in data_2017$HaveWorkedLanguage ) {
     vals <- unlist ( vals )
     for ( j in vals ) {
       if ( !is.na ( j ) ) {
-        if ( toString ( j ) %in% colnames ( language_use2016 ) ) {
-          language_use2017 [ 1, j ] <- language_use2017 [ 1, j ] + 1 
+        if ( toString ( j ) %in% rownames ( language_use2017 ) ) {
+          language_use2017 [ j, 2 ] <- language_use2017 [ j, 2 ] + 1 
         }
       }
     }
   } 
 }
 
+language_use2017$rep.int.0..11. <- language_use2017 [ , 2 ] / NROW ( data_2017 )
+
 rm ( i, j, vals )
 
+language_use2011 <- data.frame ( langs, language_use2011 / NROW ( data_2011 ), rep ( 2011, 11 ) )
+language_use2012 <- data.frame ( langs, language_use2012 / NROW ( data_2012 ), rep ( 2012, 11 ) )
+language_use2013 <- data.frame ( langs, language_use2013 / NROW ( data_2013 ), rep ( 2013, 11 ) )
+language_use2014 <- data.frame ( langs, language_use2014 / NROW ( data_2014 ), rep ( 2014, 11 ) )
+language_use2015 <- data.frame ( langs, language_use2015 / NROW ( data_2015 ), rep ( 2015, 11 ) )
+
+names <- c ( "Language", "Percent", "Year" )
+colnames( language_use2011 ) <- names
+colnames( language_use2012 ) <- names
+colnames( language_use2013 ) <- names
+colnames( language_use2014 ) <- names
+colnames( language_use2015 ) <- names
+colnames( language_use2016 ) <- names
+colnames( language_use2017 ) <- names
+
+rm ( langs, names )
+
+language_use <- list ( language_use2011, language_use2012, language_use2013, language_use2014, language_use2015, language_use2016, language_use2017 )
+language_use <- do.call ( rbind, language_use )
+
+rm ( language_use2011, language_use2012, language_use2013, language_use2014, language_use2015, language_use2016, language_use2017 )
+
+# ggplot ( data = language_use, aes ( x = Year, y = Percent,group = Language  ) ) +
+#   geom_point ( aes ( color = Language ) ) +
+#   geom_line ( aes ( color = Language ) )
 ```
 
-
+```{r echo=FALSE}
+renderPlot ( {
+  ggplot ( data = language_use, aes ( x = Year, y = Percent,group = Language  ) ) +
+    geom_point ( aes ( color = Language ) ) +
+    geom_line ( aes ( color = Language ) )
+} )
+```
 
