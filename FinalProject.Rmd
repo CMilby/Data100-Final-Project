@@ -16,6 +16,101 @@ data_2017 <- read.csv ( "2017.csv", header = TRUE, na.strings = c ( "", "NA" ) )
 
 
 ```{r echo=FALSE}
+language_use2011 <- c ( NROW ( data_2011 [ !is.na ( data_2011$Which.languages.are.you.proficient.in. ), ] ), # Java
+                        NROW ( data_2011 [ !is.na ( data_2011$X.18 ), ] ), # JavaScript
+                        NROW ( data_2011 [ !is.na ( data_2011$X.20 ), ] ), # PHP
+                        NROW ( data_2011 [ !is.na ( data_2011$X.21 ), ] ), # Python
+                        NROW ( data_2011 [ !is.na ( data_2011$X.22 ), ] ), # Ruby
+                        NROW ( data_2011 [ !is.na ( data_2011$X.23 ), ] ), # SQL
+                        NROW ( data_2011 [ !is.na ( data_2011$X.24 ), ] ), # C#
+                        NROW ( data_2011 [ !is.na ( data_2011$X.25 ), ] ), # C++
+                        NROW ( data_2011 [ !is.na ( data_2011$X.26 ), ] ), # C
+                        0, # Objective-C
+                        0 ) # Node-JS
+
+language_use2012 <- c ( NROW ( data_2012 [ !is.na ( data_2012$Which.languages.are.you.proficient.in. ), ] ), # Java
+                        NROW ( data_2012 [ !is.na ( data_2012$X.11 ), ] ), # JavaScript
+                        NROW ( data_2012 [ !is.na ( data_2012$X.13 ), ] ), # PHP
+                        NROW ( data_2012 [ !is.na ( data_2012$X.14 ), ] ), # Python
+                        NROW ( data_2012 [ !is.na ( data_2012$X.16 ), ] ), # Ruby
+                        NROW ( data_2012 [ !is.na ( data_2012$X.17 ), ] ), # SQL
+                        NROW ( data_2012 [ !is.na ( data_2012$X.18 ), ] ), # C#
+                        NROW ( data_2012 [ !is.na ( data_2012$X.19 ), ] ), # C++
+                        NROW ( data_2012 [ !is.na ( data_2012$X.20 ), ] ), # C
+                        NROW ( data_2012 [ !is.na ( data_2012$X.15 ), ] ), # Objective-C
+                        0 ) # Node-JS
+                        
+language_use2013 <- c ( NROW ( data_2013 [ !is.na ( data_2013$X.42 ), ] ), # Java
+                        NROW ( data_2013 [ !is.na ( data_2013$X.43 ), ] ), # JavaScript
+                        NROW ( data_2013 [ !is.na ( data_2013$X.48 ), ] ), # PHP
+                        NROW ( data_2013 [ !is.na ( data_2013$X.49 ), ] ), # Python
+                        NROW ( data_2013 [ !is.na ( data_2013$X.50 ), ] ), # Ruby
+                        NROW ( data_2013 [ !is.na ( data_2013$X.51 ), ] ), # SQL
+                        NROW ( data_2013 [ !is.na ( data_2013$X.41 ), ] ), # C#
+                        NROW ( data_2013 [ !is.na ( data_2013$X.40 ), ] ), # C++
+                        NROW ( data_2013 [ !is.na ( data_2013$Which.of.the.following.languages.or.technologies.have.you.used.significantly.in.the.past.year. ), ] ), # C
+                        NROW ( data_2013 [ !is.na ( data_2013$X.47 ), ] ), # Objective-C
+                        NROW ( data_2013 [ !is.na ( data_2013$X.46 ), ] ) ) # Node-JS
+                
+language_use2014 <- c ( NROW ( data_2014 [ !is.na ( data_2014$X.27 ), ] ), # Java
+                        NROW ( data_2014 [ !is.na ( data_2014$X.28 ), ] ), # JavaScript
+                        NROW ( data_2014 [ !is.na ( data_2014$X.31 ), ] ), # PHP
+                        NROW ( data_2014 [ !is.na ( data_2014$X.32 ), ] ), # Python
+                        NROW ( data_2014 [ !is.na ( data_2014$X.33 ), ] ), # Ruby
+                        NROW ( data_2014 [ !is.na ( data_2014$X.34 ), ] ), # SQL
+                        NROW ( data_2014 [ !is.na ( data_2014$X.26 ), ] ), # C#
+                        NROW ( data_2014 [ !is.na ( data_2014$X.25 ), ] ), # C++
+                        NROW ( data_2014 [ !is.na ( data_2014$X.24 ), ] ), # C
+                        NROW ( data_2014 [ !is.na ( data_2014$X.30 ), ] ), # Objective-C
+                        NROW ( data_2014 [ !is.na ( data_2014$X.29 ), ] ) ) # Node-Js
+
+language_use2015 <- c ( NROW ( data_2015 [ !is.na ( data_2015$Current.Lang...Tech..Java ), ] ), # Java
+                        NROW ( data_2015 [ !is.na ( data_2015$Current.Lang...Tech..JavaScript ), ] ), # JavaScript
+                        NROW ( data_2015 [ !is.na ( data_2015$Current.Lang...Tech..PHP ), ] ), # PHP
+                        NROW ( data_2015 [ !is.na ( data_2015$Current.Lang...Tech..Python ), ] ), # Python
+                        NROW ( data_2015 [ !is.na ( data_2015$Current.Lang...Tech..Ruby ), ] ), # Ruby
+                        NROW ( data_2015 [ !is.na ( data_2015$Current.Lang...Tech..SQL ), ] ), # SQL
+                        NROW ( data_2015 [ !is.na ( data_2015$Current.Lang...Tech..C. ), ] ), # C#
+                        NROW ( data_2015 [ !is.na ( data_2015$Current.Lang...Tech..C.. ), ] ), # C++
+                        NROW ( data_2015 [ !is.na ( data_2015$Current.Lang...Tech..C ), ] ), # C
+                        NROW ( data_2015 [ !is.na ( data_2015$Current.Lang...Tech..Objective.C ), ] ), # OBjective-C
+                        NROW ( data_2015 [ !is.na ( data_2015$Current.Lang...Tech..Node.js ), ] ) ) # Node-JS
+  
+language_use2016 <- data.frame ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )  
+colnames ( language_use2016 ) <- c ( "Java", "JavaScript", "PHP", "Python", "Ruby", "SQL", "C#", "C++", "C", "Objective-C", "Node.js")
+
+for ( i in data_2016$tech_do ) {
+  if ( !is.na ( i ) ) {
+    vals <- strsplit ( toString ( i ), "; " )
+    vals <- unlist ( vals )
+    for ( j in vals ) {
+      if ( !is.na ( j ) ) {
+        if ( toString ( j ) %in% colnames ( language_use2016 ) ) {
+          language_use2016 [ 1, j ] <- language_use2016 [ 1, j ] + 1 
+        }
+      }
+    }
+  } 
+}
+
+language_use2017 <- data.frame ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )  
+colnames ( language_use2017 ) <- c ( "Java", "JavaScript", "PHP", "Python", "Ruby", "SQL", "C#", "C++", "C", "Objective-C", "Node.js")
+
+for ( i in data_2017$HaveWorkedLanguage ) {
+  if ( !is.na ( i ) ) {
+    vals <- strsplit ( toString ( i ), "; " )
+    vals <- unlist ( vals )
+    for ( j in vals ) {
+      if ( !is.na ( j ) ) {
+        if ( toString ( j ) %in% colnames ( language_use2016 ) ) {
+          language_use2017 [ 1, j ] <- language_use2017 [ 1, j ] + 1 
+        }
+      }
+    }
+  } 
+}
+
+rm ( i, j, vals )
 
 ```
 
