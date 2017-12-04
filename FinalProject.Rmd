@@ -157,3 +157,24 @@ renderPlot ( {
 } )
 ```
 
+```{r echo=FALSE}
+satisfaction_company_2017 <- subset(data_2017, select = c("CompanyType", "JobSatisfaction"))
+satisfaction_company_2017 <- subset(satisfaction_company_2017, !(is.na(satisfaction_company_2017$CompanyType)) & !(is.na(satisfaction_company_2017$JobSatisfaction)))
+satisfaction_company_2017
+```
+```{r echo=FALSE}
+satisfaction_avg_2017 <- aggregate(satisfaction_company_2017$JobSatisfaction, by=list(CompanyType=satisfaction_company_2017$CompanyType), FUN = mean)
+satisfaction_avg_2017
+
+```
+
+
+```{r echo=FALSE}
+
+renderPlot ( {
+  ggplot(data = satisfaction_avg_2017, aes (x = CompanyType, y = x)) + geom_bar(stat = "identity", aes (fill = CompanyType), show.legend = FALSE) + coord_flip() + labs(title = "Job Satisfaction per Company Type (2017)", y = "Average Job Satisfaction: ( 0 - 10 )", x = "Company Type")
+})
+
+```
+
+
