@@ -158,6 +158,34 @@ renderPlot ( {
 ```
 
 ```{r echo=FALSE}
+gender_2017 <- data.frame ( data_2017 [ ( ( data_2017$Gender == "Female" | data_2017$Gender == "Male" ) & !is.na ( data_2017$Gender ) ), "Gender" ] )
+gender_2017 <- data.frame ( gender_2017, rep ( 2017, NROW ( gender_2017 ) ) )
+num_not_null <- NROW ( data_2017 [ !is.na ( data_2017$Gender ), ] )
+
+other <- data.frame ( rep ( "Other", num_not_null - NROW ( gender_2017 ) ), rep ( 2017, num_not_null - NROW ( gender_2017 ) ) )
+colnames ( other ) <- c ( "Gender", "Year" )
+colnames( gender_2017 ) <- c ( "Gender", "Year" )
+gender_2017 <- rbind ( gender_2017, other )
+
+gender_2015 <- data.frame ( data_2015$Gender, rep ( 2015, NROW ( data_2015 ) ) )
+gender_2016 <- data.frame ( data_2016$gender, rep ( 2016, NROW ( data_2016 ) ) )
+colnames ( gender_2015 ) <- c ( "Gender", "Year" )
+colnames ( gender_2016 ) <- c ( "Gender", "Year" )
+
+gender <- list ( gender_2015, gender_2016, gender_2017 )
+gender <- do.call ( rbind, gender )
+
+gender <- table( gender )
+gender <- data.frame ( gender )
+gender <- gender [ gender$Freq != 0 & gender$Gender != "Prefer not to disclose", ]
+
+ggplot ( data = gender, aes( Year, Freq ) ) +
+  geom_bar( aes ( fill = Gender ), position = "dodge", stat = "identity" )
+
+rm ( num_not_null, other, gender_2015, gender_2016, gender_2017 )
+```
+
+```{r echo=FALSE}
 satisfaction_company_2017 <- subset(data_2017, select = c("CompanyType", "JobSatisfaction"))
 satisfaction_company_2017 <- subset(satisfaction_company_2017, !(is.na(satisfaction_company_2017$CompanyType)) & !(is.na(satisfaction_company_2017$JobSatisfaction)))
 satisfaction_company_2017
