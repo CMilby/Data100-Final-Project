@@ -5,7 +5,10 @@ runtime: shiny
 ---
 
 ```{r echo=FALSE}
+install.packages( "maps" )
+
 require(ggplot2)
+require(maps)
 ```
 
 
@@ -184,6 +187,30 @@ ggplot ( data = gender, aes( Year, Freq ) ) +
 
 rm ( num_not_null, other, gender_2015, gender_2016, gender_2017 )
 ```
+
+```{r echo=FALSE}
+country <- data_2017$Country
+country <- data.frame ( table ( country ) )
+country$country <- as.character( country$country )
+country$country [ country$country == "United States" ] <- "USA"
+country$country [ country$country == "United Kingdom" ] <- "UK"
+country$country [ country$country == "Russian Federation" ] <- "Russia"
+country <- country [ - c ( 9 ), ] # Remove Antartica
+colnames ( country ) <- c ( "region", "freq" )
+
+map.world <- map_data ( "world" )
+map.world <- merge( x = map.world, y = country, by = "region", all = TRUE)
+map.world <- map.world [ order ( map.world$order ), ]
+
+ggplot ( ) + 
+  theme ( legend.position = "none" ) +
+  geom_map( data = map.world, map = map.world, aes ( map_id = region, x = long, y = lat, fill = freq ) ) +
+  scale_fill_gradient( low = "green", high = "blue", guide = "colourbar" ) +
+  coord_equal ( )
+
+rm ( country )
+```
+
 
 ```{r echo=FALSE}
 satisfaction_company_2017 <- subset(data_2017, select = c("CompanyType", "JobSatisfaction"))
