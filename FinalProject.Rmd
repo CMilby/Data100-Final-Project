@@ -179,10 +179,12 @@ gender <- table( gender )
 gender <- data.frame ( gender )
 gender <- gender [ gender$Freq != 0 & gender$Gender != "Prefer not to disclose", ]
 
+renderPlot({
 ggplot ( data = gender, aes( Year, Freq ) ) +
   geom_bar( aes ( fill = Gender ), position = "dodge", stat = "identity" )
 
 rm ( num_not_null, other, gender_2015, gender_2016, gender_2017 )
+})
 ```
 
 ```{r echo=FALSE}
@@ -205,4 +207,63 @@ renderPlot ( {
 
 ```
 
+```{r echo=FALSE}
+salary_industry_2016 <- subset(data_2016, select = c("salary_range", "industry"))
+salary_industry_2016 <- subset(salary_industry_2016, !is.na(salary_industry_2016$salary_range) & !is.na(salary_industry_2016$industry))
+
+salary_industry_2015 <- subset(data_2015, select = c("Compensation", "Industry"))
+salary_industry_2015 <- subset(salary_industry_2015, !is.na(salary_industry_2015$Compensation) & !is.na(salary_industry_2015$Industry))
+
+salary_industry_2014 <- subset(data_2014, select = c("Including.bonus..what.is.your.annual.compensation.in.USD.", "How.would.you.best.describe.the.industry.you.currently.work.in."))
+salary_industry_2014 <- subset(salary_industry_2014, !is.na(salary_industry_2014$Including.bonus..what.is.your.annual.compensation.in.USD.) & !is.na(salary_industry_2014$How.would.you.best.describe.the.industry.you.currently.work.in.))
+salary_industry_2014 <- subset(salary_industry_2014[-1,])
+
+salary_industry_2013 <- subset(data_2013, select = c("Including.bonus..what.is.your.annual.compensation.in.USD.", "How.would.you.best.describe.the.industry.you.currently.work.in."))
+salary_industry_2013 <- subset(salary_industry_2013, !is.na(salary_industry_2013$Including.bonus..what.is.your.annual.compensation.in.USD.) & !is.na(salary_industry_2013$How.would.you.best.describe.the.industry.you.currently.work.in.))
+salary_industry_2013 <- subset(salary_industry_2013[-1,])
+
+salary_industry_2012 <- subset(data_2012, select = c("Including.bonus..what.is.your.annual.compensation.in.USD.", "How.would.you.best.describe.the.industry.you.currently.work.in."))
+salary_industry_2012 <- subset(salary_industry_2012, !is.na(salary_industry_2012$Including.bonus..what.is.your.annual.compensation.in.USD.) & !is.na(salary_industry_2012$How.would.you.best.describe.the.industry.you.currently.work.in.))
+salary_industry_2012 <- subset(salary_industry_2012[-1,])
+
+salary_industry_2011 <- subset(data_2011, select = c("Including.bonus..what.is.your.annual.compensation.in.USD.", "How.would.you.best.describe.the.industry.you.work.in."))
+salary_industry_2011 <- subset(salary_industry_2011, !is.na(salary_industry_2011$Including.bonus..what.is.your.annual.compensation.in.USD.) & !is.na(salary_industry_2011$How.would.you.best.describe.the.industry.you.work.in.))
+salary_industry_2011 <- subset(salary_industry_2011[-1,])
+
+new_name <- c("Salary", "Industry")
+names(salary_industry_2016) <- new_name
+names(salary_industry_2015) <- new_name
+names(salary_industry_2014) <- new_name
+names(salary_industry_2013) <- new_name
+names(salary_industry_2012) <- new_name
+names(salary_industry_2011) <- new_name
+
+```
+
+```{r echo=FALSE}
+si_agg_2016 <- aggregate(salary_industry_2016$Industry, by=list(Salary=salary_industry_2016$Salary, Industry=salary_industry_2016$Industry), FUN = length)
+
+si_agg_2015 <- aggregate(salary_industry_2015$Industry, by=list(Salary=salary_industry_2015$Salary, Industry=salary_industry_2015$Industry), FUN = length)
+
+si_agg_2014 <- aggregate(salary_industry_2014$Industry, by=list(Salary=salary_industry_2014$Salary, Industry=salary_industry_2014$Industry), FUN = length)
+
+si_agg_2013 <- aggregate(salary_industry_2013$Industry, by=list(Salary=salary_industry_2013$Salary, Industry=salary_industry_2013$Industry), FUN = length)
+
+si_agg_2012 <- aggregate(salary_industry_2012$Industry, by=list(Salary=salary_industry_2012$Salary, Industry=salary_industry_2012$Industry), FUN = length)
+
+si_agg_2011 <- aggregate(salary_industry_2011$Industry, by=list(Salary=salary_industry_2011$Salary, Industry=salary_industry_2011$Industry), FUN = length)
+
+tail(si_agg_2016, n = 140)
+```
+
+```{r echo=FALSE}
+y_levels_2016 <- c("Unemployed", "Rather not say", "Other (please specify)", "Less than $10,000", "$10,000 - $20,000", "$20,000 - $30,000", "$30,000 - $40,000", "$40,000 - $50,000", "$60,000 - $70,000", "$70,000 - $80,000", "$80,000 - $90,000", "$100,000 - $110,000", "$120,000 - $130,000", "$130,000 - $140,000", "$150,000 - $160,000", "$170,000 - $180,000", "$180,000 - $190,000", "More than $200,000")
+si_agg_2016$Salary <- factor(si_agg_2016, levels = y_levels_2016)
+  
+renderPlot ( {
+  ggplot ( data = si_agg_2016, aes ( x = x, y = Salary,group = Industry  ) ) +
+    geom_point ( aes ( color = Industry ) ) +
+    geom_line ( aes ( color = Industry ) )
+} )
+```
 
