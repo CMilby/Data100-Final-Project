@@ -5,10 +5,16 @@ runtime: shiny
 ---
 
 ```{r echo=FALSE}
-install.packages( "maps" )
+# install.packages ( "maps" )
+# install.packages( "party" )
+# install.packages("shiny")
+# install.packages("ggplot2")
 
 require(ggplot2)
 require(maps)
+
+library(party)
+library(shiny)
 ```
 
 
@@ -146,10 +152,6 @@ language_use <- list ( language_use2011, language_use2012, language_use2013, lan
 language_use <- do.call ( rbind, language_use )
 
 rm ( language_use2011, language_use2012, language_use2013, language_use2014, language_use2015, language_use2016, language_use2017 )
-
-# ggplot ( data = language_use, aes ( x = Year, y = Percent,group = Language  ) ) +
-#   geom_point ( aes ( color = Language ) ) +
-#   geom_line ( aes ( color = Language ) )
 ```
 
 ```{r echo=FALSE}
@@ -182,8 +184,10 @@ gender <- table( gender )
 gender <- data.frame ( gender )
 gender <- gender [ gender$Freq != 0 & gender$Gender != "Prefer not to disclose", ]
 
-ggplot ( data = gender, aes( Year, Freq ) ) +
-  geom_bar( aes ( fill = Gender ), position = "dodge", stat = "identity" )
+renderPlot ( {
+  ggplot ( data = gender, aes( Year, Freq ) ) +
+    geom_bar( aes ( fill = Gender ), position = "dodge", stat = "identity" )
+} )
 
 rm ( num_not_null, other, gender_2015, gender_2016, gender_2017 )
 ```
@@ -202,22 +206,121 @@ map.world <- map_data ( "world" )
 map.world <- merge( x = map.world, y = country, by = "region", all = TRUE)
 map.world <- map.world [ order ( map.world$order ), ]
 
-ggplot ( ) + 
-  theme ( legend.position = "none" ) +
-  geom_map( data = map.world, map = map.world, aes ( map_id = region, x = long, y = lat, fill = freq ) ) +
-  scale_fill_gradient( low = "green", high = "blue", guide = "colourbar" ) +
-  coord_equal ( )
+renderPlot ( {
+  ggplot ( ) + 
+    theme ( legend.position = "none" ) +
+    geom_map( data = map.world, map = map.world, aes ( map_id = region, x = long, y = lat, fill = freq ) ) +
+    scale_fill_gradient( low = "green", high = "blue", guide = "colourbar" ) +
+    coord_equal ( )
+} )
 
 rm ( country )
 ```
 
+```{r echo=FALSE}
+stack <- data_2017
+
+#trying to get language
+lang <- stack$HaveWorkedLanguage
+spade <- strsplit(as.character(lang), ';')
+mixed <- do.call(rbind, spade)
+# head(mixed[,1])
+
+stack$PrimaryLanguage <- mixed[,1]
+stack$PrimaryLanguage <- as.factor(stack$PrimaryLanguage)
+# class(stack$PrimaryLanguage)
+
+stack$SalaryGroup <- ifelse(stack$Salary < 40000, 0, ifelse(stack$Salary > 100000, 2, 1))
+
+stack$SalaryGroup <- as.factor(stack$SalaryGroup)
+
+
+```
 
 ```{r echo=FALSE}
+
+
+#need a No NA dataset with just salary and gender
+
+stack.Sel <- subset(stack, select = c("PrimaryLanguage", "TabsSpaces", "YearsProgram", "Professional", "MajorUndergrad", "JobSatisfaction", "Salary", "SalaryGroup", "Gender", "Race"))
+
+# head(stack.Sel)
+#cleans all NAs
+stack.Sel.clean <- stack.Sel[!is.na(stack.Sel),]
+#for some reason, NAs in 
+stack.Sel.clean <- stack.Sel.clean[!is.na(stack.Sel.clean$YearsProgram),]
+stack.Sel.clean <- stack.Sel.clean[!is.na(stack.Sel.clean$TabsSpaces),]
+stack.Sel.clean <- stack.Sel.clean[!is.na(stack.Sel.clean$PrimaryLanguage),]
+stack.Sel.clean <- stack.Sel.clean[!is.na(stack.Sel.clean$Professional),]
+stack.Sel.clean <- stack.Sel.clean[!is.na(stack.Sel.clean$JobSatisfaction),]
+stack.Sel.clean <- stack.Sel.clean[!is.na(stack.Sel.clean$MajorUndergrad),]
+stack.Sel.clean <- stack.Sel.clean[!is.na(stack.Sel.clean$SalaryGroup),]
+stack.Sel.clean <- stack.Sel.clean[!is.na(stack.Sel.clean$Gender),]
+stack.Sel.clean <- stack.Sel.clean[!is.na(stack.Sel.clean$Race),]
+
+# head(stack.Sel.clean)
+
+#need to simplify Salary
+#stack.Sel.clean$SalaryGroup <- ifelse(stack.Sel.clean$Salary <=65000, 0, 
+ #                                ifelse(stack.Sel.clean$Salary >130000, 1, 1))
+# class(stack.Sel.clean$PrimaryLanguage)
+
+# class(stack.Sel.clean$SalaryGroup)
+
+```
+
+```{r echo=FALSE}
+
+tree1 <- ctree(SalaryGroup ~ PrimaryLanguage + Professional + YearsProgram, data=stack.Sel.clean)
+#plot(tree1)
+
+#build a predictor
+indices <- sample(2, nrow(stack.Sel.clean), replace = TRUE, prob = c(0.7, 0.3))
+stack17.train <- stack.Sel.clean[indices == 1,]
+stack17.test <- stack.Sel.clean[indices == 2,]
+
+#SALARY
+#stack17.Saldt <- ctree(SalaryGroup ~ YearsProgram + Professional + TabsSpaces + Gender + MajorUndergrad + PrimaryLanguage, data = stack17.train)
+stack17.Saldt <- ctree(SalaryGroup ~  MajorUndergrad + PrimaryLanguage + TabsSpaces, data = stack17.train)
+# plot(stack17.Saldt)
+
+stack17.Salpredict <- predict(stack17.Saldt, newdata = stack17.test)
+
+Salpred.table <- table("Predicted" = stack17.Salpredict, "Actual" = stack17.test$SalaryGroup)
+# Salpred.table
+
+#PRIMARY LANGUAGE
+#stack17.Langdt <- ctree(PrimaryLanguage ~ YearsProgram + Professional + TabsSpaces + Gender + MajorUndergrad, data = stack17.train)
+stack17.Langdt <- ctree(PrimaryLanguage ~  YearsProgram + Professional + TabsSpaces, data = stack17.train)
+# plot(stack17.Langdt)
+
+stack17.LangPredict <- predict(stack17.Langdt, newdata = stack17.test)
+
+LangPred.table <- table("Predicted" = stack17.LangPredict, "Actual" = stack17.test$PrimaryLanguage)
+# LangPred.table
+```
+
+```{r}
+renderPlot({
+  plot(stack17.Saldt, main="Salary Decision Tree")
+})
+
+Salpred.table
+
+renderPlot({plot(stack17.Langdt, main = "Language Decision Tree")})
+
+LangPred.table
+```
+
+```{r echo=FALSE}
+#Subset company type and job satisfaction
 satisfaction_company_2017 <- subset(data_2017, select = c("CompanyType", "JobSatisfaction"))
+#eliminate na
 satisfaction_company_2017 <- subset(satisfaction_company_2017, !(is.na(satisfaction_company_2017$CompanyType)) & !(is.na(satisfaction_company_2017$JobSatisfaction)))
 satisfaction_company_2017
 ```
 ```{r echo=FALSE}
+#find the average
 satisfaction_avg_2017 <- aggregate(satisfaction_company_2017$JobSatisfaction, by=list(CompanyType=satisfaction_company_2017$CompanyType), FUN = mean)
 satisfaction_avg_2017
 
@@ -225,11 +328,124 @@ satisfaction_avg_2017
 
 
 ```{r echo=FALSE}
-
 renderPlot ( {
-  ggplot(data = satisfaction_avg_2017, aes (x = CompanyType, y = x)) + geom_bar(stat = "identity", aes (fill = CompanyType), show.legend = FALSE) + coord_flip() + labs(title = "Job Satisfaction per Company Type (2017)", y = "Average Job Satisfaction: ( 0 - 10 )", x = "Company Type")
+  ggplot(data = satisfaction_avg_2017, aes (x = CompanyType, y = x)) + 
+    geom_bar(stat = "identity", aes (fill = CompanyType), show.legend = FALSE) + 
+    coord_flip( ylim = c ( 5 : 8 ) ) + 
+    labs(title = "Job Satisfaction per Company Type (2017)", y = "Average Job Satisfaction: ( 5 - 8 )", x = "Company Type")
 })
+```
+
+```{r echo=FALSE}
+#subsetting salary and industry for 2016 - 2011 and eliminating na
+salary_industry_2016 <- subset(data_2016, select = c("salary_range", "industry"))
+salary_industry_2016 <- subset(salary_industry_2016, !is.na(salary_industry_2016$salary_range) & !is.na(salary_industry_2016$industry))
+
+salary_industry_2015 <- subset(data_2015, select = c("Compensation", "Industry"))
+salary_industry_2015 <- subset(salary_industry_2015, !is.na(salary_industry_2015$Compensation) & !is.na(salary_industry_2015$Industry))
+
+salary_industry_2014 <- subset(data_2014, select = c("Including.bonus..what.is.your.annual.compensation.in.USD.", "How.would.you.best.describe.the.industry.you.currently.work.in."))
+salary_industry_2014 <- subset(salary_industry_2014, !is.na(salary_industry_2014$Including.bonus..what.is.your.annual.compensation.in.USD.) & !is.na(salary_industry_2014$How.would.you.best.describe.the.industry.you.currently.work.in.))
+salary_industry_2014 <- subset(salary_industry_2014[-1,])
+
+salary_industry_2013 <- subset(data_2013, select = c("Including.bonus..what.is.your.annual.compensation.in.USD.", "How.would.you.best.describe.the.industry.you.currently.work.in."))
+salary_industry_2013 <- subset(salary_industry_2013, !is.na(salary_industry_2013$Including.bonus..what.is.your.annual.compensation.in.USD.) & !is.na(salary_industry_2013$How.would.you.best.describe.the.industry.you.currently.work.in.))
+salary_industry_2013 <- subset(salary_industry_2013[-1,])
+
+salary_industry_2012 <- subset(data_2012, select = c("Including.bonus..what.is.your.annual.compensation.in.USD.", "How.would.you.best.describe.the.industry.you.currently.work.in."))
+salary_industry_2012 <- subset(salary_industry_2012, !is.na(salary_industry_2012$Including.bonus..what.is.your.annual.compensation.in.USD.) & !is.na(salary_industry_2012$How.would.you.best.describe.the.industry.you.currently.work.in.))
+salary_industry_2012 <- subset(salary_industry_2012[-1,])
+
+salary_industry_2011 <- subset(data_2011, select = c("Including.bonus..what.is.your.annual.compensation.in.USD.", "How.would.you.best.describe.the.industry.you.work.in."))
+salary_industry_2011 <- subset(salary_industry_2011, !is.na(salary_industry_2011$Including.bonus..what.is.your.annual.compensation.in.USD.) & !is.na(salary_industry_2011$How.would.you.best.describe.the.industry.you.work.in.))
+salary_industry_2011 <- subset(salary_industry_2011[-1,])
+
+#rename the columns
+new_name <- c("Salary", "Industry")
+names(salary_industry_2016) <- new_name
+names(salary_industry_2015) <- new_name
+names(salary_industry_2014) <- new_name
+names(salary_industry_2013) <- new_name
+names(salary_industry_2012) <- new_name
+names(salary_industry_2011) <- new_name
 
 ```
 
+```{r echo=FALSE}
+#count how many people are in each category
+si_agg_2016 <- aggregate(salary_industry_2016$Industry, by=list(Salary=salary_industry_2016$Salary, Industry=salary_industry_2016$Industry), FUN = length)
+
+si_agg_2015 <- aggregate(salary_industry_2015$Industry, by=list(Salary=salary_industry_2015$Salary, Industry=salary_industry_2015$Industry), FUN = length)
+
+si_agg_2014 <- aggregate(salary_industry_2014$Industry, by=list(Salary=salary_industry_2014$Salary, Industry=salary_industry_2014$Industry), FUN = length)
+
+si_agg_2013 <- aggregate(salary_industry_2013$Industry, by=list(Salary=salary_industry_2013$Salary, Industry=salary_industry_2013$Industry), FUN = length)
+
+si_agg_2012 <- aggregate(salary_industry_2012$Industry, by=list(Salary=salary_industry_2012$Salary, Industry=salary_industry_2012$Industry), FUN = length)
+
+si_agg_2011 <- aggregate(salary_industry_2011$Industry, by=list(Salary=salary_industry_2011$Salary, Industry=salary_industry_2011$Industry), FUN = length)
+
+```
+
+```{r echo=FALSE}
+#reorder the y axis before graphing
+y_levels_2016 <- c("Unemployed", "Rather not say", "Other (please specify)", "Less than $10,000", "$10,000 - $20,000", "$20,000 - $30,000", "$30,000 - $40,000", "$40,000 - $50,000", "$50,000 - $60,000", "$60,000 - $70,000", "$70,000 - $80,000", "$80,000 - $90,000", "$90,000 - $100,000", "$100,000 - $110,000","$110,000 - $120,000", "$120,000 - $130,000", "$130,000 - $140,000","$140,000 - $150,000",  "$150,000 - $160,000","$160,000 - $170,000", "$170,000 - $180,000", "$180,000 - $190,000","$190,000 - $200,000", "More than $200,000")
+y_levels_2015 <- c("Unemployed", "Rather not say", "Less than $20,000", "$20,000 - $40,000", "$40,000 - $60,000", "$60,000 - $80,000", "$80,000 - $100,000", "$100,000 - $120,000", "$120,000 - $140,000", "$140,000 - $160,000", "More than $160,000")
+y_levels_2014 <- c("Student / Unemployed", "Rather not say", "<$20,000", "$20,000 - $40,000", "$40,000 - $60,000", "$60,000 - $80,000", "$80,000 - $100,000", "$100,000 - $120,000", "$120,000 - $140,000", ">$140,000")
+y_levels_2013 <- y_levels_2014
+y_levels_2012 <- y_levels_2014
+y_levels_2011 <- c("Student / Unemployed", "<$20,000", "$20,000 - $40,000", "$40,000 - $60,000", "$60,000 - $80,000", "$80,000 - $100,000", "$100,000 - $120,000", "$120,000 - $140,000", ">$140,000")
+
+si_agg_2016$Salary <- factor(si_agg_2016$Salary, levels = y_levels_2016)
+si_agg_2015$Salary <- factor(si_agg_2015$Salary, levels = y_levels_2015)
+si_agg_2014$Salary <- factor(si_agg_2014$Salary, levels = y_levels_2014)
+si_agg_2013$Salary <- factor(si_agg_2013$Salary, levels = y_levels_2013)
+si_agg_2012$Salary <- factor(si_agg_2012$Salary, levels = y_levels_2012)
+si_agg_2011$Salary <- factor(si_agg_2011$Salary, levels = y_levels_2011)
+  
+```
+
+```{r echo=FALSE}
+ui <- fluidPage(
+    titlePanel("Salary Per Industry"),
+    tabsetPanel(
+      tabPanel("2016", plotOutput("plot_2016")),
+      tabPanel("2015", plotOutput("plot_2015")),
+      tabPanel("2014", plotOutput("plot_2014")),
+      tabPanel("2013", plotOutput("plot_2013")),
+      tabPanel("2012", plotOutput("plot_2012")),
+      tabPanel("2011", plotOutput("plot_2011"))
+    )
+)
+
+server <- function(input, output, session) {
+  
+
+  output$plot_2016 <-  renderPlot({
+    ggplot(si_agg_2016, aes(fill=Industry, y=si_agg_2016$x, x=si_agg_2016$Salary)) + geom_bar(stat="identity") + coord_flip() + labs(title = "Salary Per Industry", y = "Number of people", x = "Salary range")
+    })
+  
+  output$plot_2015 <-  renderPlot({
+    ggplot(si_agg_2015, aes(fill=Industry, y=si_agg_2015$x, x=si_agg_2015$Salary)) + geom_bar(stat="identity") + coord_flip() + labs(title = "Salary Per Industry", y = "Number of people", x = "Salary range")
+    })
+  
+  output$plot_2014 <-  renderPlot({
+    ggplot(si_agg_2014, aes(fill=Industry, y=si_agg_2014$x, x=si_agg_2014$Salary)) + geom_bar(stat="identity") + coord_flip() + labs(title = "Salary Per Industry", y = "Number of people", x = "Salary range")
+    })
+ 
+  output$plot_2013 <-  renderPlot({
+    ggplot(si_agg_2013, aes(fill=Industry, y=si_agg_2013$x, x=si_agg_2013$Salary)) + geom_bar(stat="identity") + coord_flip() + labs(title = "Salary Per Industry", y = "Number of people", x = "Salary range")
+    }) 
+  
+  output$plot_2012 <-  renderPlot({
+    ggplot(si_agg_2012, aes(fill=Industry, y=si_agg_2012$x, x=si_agg_2012$Salary)) + geom_bar(stat="identity") + coord_flip() + labs(title = "Salary Per Industry", y = "Number of people", x = "Salary range")
+    })
+  
+  output$plot_2011 <-  renderPlot({
+    ggplot(si_agg_2011, aes(fill=Industry, y=si_agg_2011$x, x=si_agg_2011$Salary)) + geom_bar(stat="identity") + coord_flip() + labs(title = "Salary Per Industry", y = "Number of people", x = "Salary range")
+    })
+}
+
+shinyApp(ui, server)
+```
 
