@@ -188,6 +188,29 @@ rm ( num_not_null, other, gender_2015, gender_2016, gender_2017 )
 ```
 
 ```{r echo=FALSE}
+country <- data_2017$Country
+country <- data.frame ( table ( country ) )
+country$country <- as.character( country$country )
+country$country [ country$country == "United States" ] <- "USA"
+country$country [ country$country == "United Kingdom" ] <- "UK"
+country$country [ country$country == "Russian Federation" ] <- "Russia"
+country <- country [ - c ( 9 ), ] # Remove Antartica
+colnames ( country ) <- c ( "region", "freq" )
+
+map.world <- map_data ( "world" )
+map.world <- merge( x = map.world, y = country, by = "region", all = TRUE)
+map.world <- map.world [ order ( map.world$order ), ]
+
+ggplot ( ) + 
+  theme ( legend.position = "none" ) +
+  geom_map( data = map.world, map = map.world, aes ( map_id = region, x = long, y = lat, fill = freq ) ) +
+  scale_fill_gradient( low = "green", high = "blue", guide = "colourbar" ) +
+  coord_equal ( )
+
+rm ( country )
+```
+
+```{r echo=FALSE}
 #Subset company type and job satisfaction
 satisfaction_company_2017 <- subset(data_2017, select = c("CompanyType", "JobSatisfaction"))
 #eliminate na
@@ -330,3 +353,100 @@ shinyApp(ui, server)
 ```
 
 
+
+```{r echo=FALSE}
+library(party)
+stack <- data_2017
+
+#trying to get language
+lang <- stack$HaveWorkedLanguage
+spade <- strsplit(as.character(lang), ';')
+mixed <- do.call(rbind, spade)
+head(mixed[,1])
+
+stack$PrimaryLanguage <- mixed[,1]
+stack$PrimaryLanguage <- as.factor(stack$PrimaryLanguage)
+class(stack$PrimaryLanguage)
+
+stack$SalaryGroup <- ifelse(stack$Salary < 40000, 0, ifelse(stack$Salary > 100000, 2, 1))
+
+stack$SalaryGroup <- as.factor(stack$SalaryGroup)
+
+
+```
+
+```{r echo=FALSE}
+
+
+#need a No NA dataset with just salary and gender
+
+stack.Sel <- subset(stack, select = c("PrimaryLanguage", "TabsSpaces", "YearsProgram", "Professional", "MajorUndergrad", "JobSatisfaction", "Salary", "SalaryGroup", "Gender", "Race"))
+
+head(stack.Sel)
+#cleans all NAs
+stack.Sel.clean <- stack.Sel[!is.na(stack.Sel),]
+#for some reason, NAs in 
+stack.Sel.clean <- stack.Sel.clean[!is.na(stack.Sel.clean$YearsProgram),]
+stack.Sel.clean <- stack.Sel.clean[!is.na(stack.Sel.clean$TabsSpaces),]
+stack.Sel.clean <- stack.Sel.clean[!is.na(stack.Sel.clean$PrimaryLanguage),]
+stack.Sel.clean <- stack.Sel.clean[!is.na(stack.Sel.clean$Professional),]
+stack.Sel.clean <- stack.Sel.clean[!is.na(stack.Sel.clean$JobSatisfaction),]
+stack.Sel.clean <- stack.Sel.clean[!is.na(stack.Sel.clean$MajorUndergrad),]
+stack.Sel.clean <- stack.Sel.clean[!is.na(stack.Sel.clean$SalaryGroup),]
+stack.Sel.clean <- stack.Sel.clean[!is.na(stack.Sel.clean$Gender),]
+stack.Sel.clean <- stack.Sel.clean[!is.na(stack.Sel.clean$Race),]
+
+head(stack.Sel.clean)
+
+#need to simplify Salary
+#stack.Sel.clean$SalaryGroup <- ifelse(stack.Sel.clean$Salary <=65000, 0, 
+ #                                ifelse(stack.Sel.clean$Salary >130000, 1, 1))
+class(stack.Sel.clean$PrimaryLanguage)
+
+class(stack.Sel.clean$SalaryGroup)
+
+```
+
+```{r echo=FALSE}
+
+tree1 <- ctree(SalaryGroup ~ PrimaryLanguage + Professional + YearsProgram, data=stack.Sel.clean)
+#plot(tree1)
+
+#build a predictor
+indices <- sample(2, nrow(stack.Sel.clean), replace = TRUE, prob = c(0.7, 0.3))
+stack17.train <- stack.Sel.clean[indices == 1,]
+stack17.test <- stack.Sel.clean[indices == 2,]
+
+#SALARY
+#stack17.Saldt <- ctree(SalaryGroup ~ YearsProgram + Professional + TabsSpaces + Gender + MajorUndergrad + PrimaryLanguage, data = stack17.train)
+stack17.Saldt <- ctree(SalaryGroup ~  MajorUndergrad + PrimaryLanguage + TabsSpaces, data = stack17.train)
+plot(stack17.Saldt)
+
+stack17.Salpredict <- predict(stack17.Saldt, newdata = stack17.test)
+
+Salpred.table <- table("Predicted" = stack17.Salpredict, "Actual" = stack17.test$SalaryGroup)
+Salpred.table
+
+#PRIMARY LANGUAGE
+#stack17.Langdt <- ctree(PrimaryLanguage ~ YearsProgram + Professional + TabsSpaces + Gender + MajorUndergrad, data = stack17.train)
+stack17.Langdt <- ctree(PrimaryLanguage ~  YearsProgram + Professional + TabsSpaces, data = stack17.train)
+plot(stack17.Langdt)
+
+stack17.LangPredict <- predict(stack17.Langdt, newdata = stack17.test)
+
+LangPred.table <- table("Predicted" = stack17.LangPredict, "Actual" = stack17.test$PrimaryLanguage)
+LangPred.table
+```
+
+```{r}
+renderPlot({
+  plot(stack17.Saldt, main="Salary Decision Tree")
+})
+
+Salpred.table
+
+renderPlot({plot(stack17.Langdt, main = "Language Decision Tree")})
+
+LangPred.table
+
+```
